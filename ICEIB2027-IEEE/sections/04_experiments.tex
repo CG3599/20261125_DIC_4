@@ -1,0 +1,11 @@
+\section{Experimental Design}
+\subsection{Evaluation Protocol}
+GroupKFold splits data by trip to prevent segments from the same trip appearing in training and testing. A chronological holdout assesses temporal generalization. Baselines include average speed, speed-limit estimates, Google Maps two-wheeled ETA, and multiple linear regression. The planning ablation compares LLM-only, LLM with a knowledge base, a single agent with equivalent tools and verification, and the complete multi-agent framework. Feasibility is assessed by an independent oracle rather than the planner's own verifier.
+\input{tables/comparison}
+\subsection{Metrics}
+For $N$ trips with actual times $T_j$ and predictions $\hat T_j$,
+\begin{align}
+\mathrm{MAE}&=\frac{1}{N}\sum_{j=1}^N|T_j-\hat T_j|,\\
+\mathrm{MAPE}&=\frac{100}{N}\sum_{j=1}^N\frac{|T_j-\hat T_j|}{T_j},\\
+\mathrm{Coverage}_{90}&=\frac{1}{N}\sum_{j=1}^N\mathbf{1}(T_j\leq\hat T_{j,90}).
+\end{align}

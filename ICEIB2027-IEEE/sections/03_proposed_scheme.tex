@@ -1,0 +1,38 @@
+\section{Proposed Scheme}
+\subsection{Architecture}
+The system consists of a planning agent, a pace analysis agent, a weather agent, a road and fuel agent, and a verification agent. The orchestrator interprets natural-language requests and coordinates tool calls. The verification agent applies deterministic Python rules independently of language-model reasoning.
+\begin{figure}[htbp]
+\centering
+\setlength{\fboxsep}{5pt}
+\IfFileExists{figures/architecture.pdf}{\includegraphics[width=\columnwidth]{figures/architecture.pdf}}{%
+\fbox{\parbox{0.88\columnwidth}{\centering Rider query and GPX data\\$\downarrow$\\Planning agent\\$\downarrow$\\Pace / Weather / Road and fuel agents\\$\downarrow$\\Deterministic verification\\$\downarrow$\\Feasible plan or replanning / refusal}}
+}
+\caption{Proposed planning and verification workflow.}
+\label{fig:architecture}
+\end{figure}
+\subsection{Data Preparation}
+The proposed dataset comprises 279 GPX trips from one rider. Preprocessing includes privacy trimming, speed smoothing, moving and stopped state separation, and road segmentation. Road curvature, grade from a 20-m digital terrain model, and road class are incorporated as features. Raw GPX files are excluded from public version control.
+\subsection{Personalized Pace Prediction}
+For segment $i$, let $t_i$ denote moving time and $\mathbf{x}_i$ denote the feature vector. LightGBM models are trained to predict quantiles of $y_i=\log t_i$ using pinball loss:
+\begin{equation}
+L_q(y,\hat y)=\max\{q(y-\hat y),(q-1)(y-\hat y)\}.
+\end{equation}
+The quantile levels are $q\in\{0.5,0.9\}$. Predicted segment times are transformed back to the original time scale. Trip-level conformal calibration uses held-out trips to obtain a conservative upper travel-time estimate, rather than assuming that summing segment P90 values yields a calibrated trip P90.
+\begin{equation}
+\widehat T_{90}=\sum_i\widehat t_{i,50}+B+c_{0.9},
+\end{equation}
+where $B$ denotes planned breaks and $c_{0.9}$ is the trip-level calibration adjustment. Intermediate conservative ETAs distribute the adjustment by cumulative distance as specified in the design; their marginal coverage is not assumed to be guaranteed.
+\subsection{Arrival-Time-Aware Queries}
+Predicted P50 and P90 arrival times are used to query weather forecasts, warnings, road events, fuel station availability and civil twilight. Proposed external sources include the Central Weather Administration, Transport Data eXchange, OpenStreetMap, fuel station datasets, and Google Maps Routes API.
+\subsection{Deterministic Verification}
+Let $d$ denote departure time, $T_{\mathrm{dusk}}$ the end of civil twilight, and $T_{\mathrm{user}}$ the rider's return deadline. The daylight constraint is
+\begin{equation}
+d+\widehat T_{90}\leq\min(T_{\mathrm{dusk}},T_{\mathrm{user}}).
+\end{equation}
+For consecutive fuel stops, distance $D_j$ must satisfy
+\begin{equation}
+D_j\leq R(1-m),
+\end{equation}
+where $R$ is estimated vehicle range and $m$ is a reserve margin. The P90 arrival time must also fall within station opening hours. Additional rules flag weather-warning overlaps, reject road closures or restrictions, and require traceable numerical outputs. Missing or stale external data are explicitly reported.
+
+The planner evaluates candidate departure times, retains verified plans with the greatest return-time slack, and replans when verification fails. If no feasible solution is found within the attempt limit, it returns an infeasibility explanation and alternatives.
