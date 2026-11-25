@@ -2,6 +2,10 @@
 
 This repository contains the IEEE-style proposal manuscript for **Moto Touring Copilot: A Multi-Agent Motorcycle Touring Planning System with Personalized Pace Prediction and Deterministic Verification**.
 
+## Online draft
+
+[View the IEEE conference draft on Overleaf](https://www.overleaf.com/project/6b06bdeea0254d587d0bec1d/share#d2e67a289a83aae407abcdc2d0caacb0ff3def4548832180)
+
 ## Project structure
 
 - `ICEIB2027-IEEE/main.tex` — main LaTeX document
